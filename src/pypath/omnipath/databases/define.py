@@ -31,7 +31,7 @@ import pypath.share.session as session
 import pypath.share.common as common
 import pypath.omnipath.databases.build as build
 
-_logger = session.Logger(name = 'db_define')
+_logger = session.Logger(name = 'omnipath_db_def')
 _log = _logger._log
 _console = _logger._console
 
@@ -208,7 +208,7 @@ class DatabaseDefinitionManager(session.Logger):
     
     def __init__(self, classes = None, databases = None):
         
-        session.Logger.__init__(self, name = 'db_define')
+        session.Logger.__init__(self, name = 'omnipath_db_def')
         
         self._classes = classes or self._default_json('classes')
         self._databases = databases or self._default_json('builtins')

@@ -38,7 +38,9 @@ def build(dbclass, dbdef):
     should be managed by the ``pypath.omnipath.app`` module.
     """
     
-    dbclass = dbclass if callable(dbclass) else dbclass.get_class()
+    local_vars = {}
+    
+    _dbclass = dbclass if callable(dbclass) else dbclass.get_class()
     
     _log(
         'Building database `%s` (class %s).' % (
@@ -48,15 +50,17 @@ def build(dbclass, dbdef):
     )
     
     build_method = (
-        dbclass
+        _dbclass
             if not dbdef.get('init') else
-        getattr(dbclass, dbdef.get('init'))
+        getattr(_dbclass, dbdef.get('init'))
     )
     
     build_args = dbdef.get('args') or {}
     
+    # creating the instance
     db = build_method(**build_args)
     
+    # preparation
     prep = dbdef.get('prepare') or {}
     
     for var, method in prep.items():
@@ -72,7 +76,7 @@ def build(dbclass, dbdef):
         
         if callable(method):
             
-            locals()[var] = method()
+            local_vars[var] = method()
             
         else:
             
@@ -86,14 +90,20 @@ def build(dbclass, dbdef):
             
             if method_host:
                 
-                locals()[var] = (
+                _log('Creating variable `%s`.' % var)
+                
+                local_vars[var] = (
                     getattr(method_host, method)(**prep_method_args)
                 )
                 
             else:
                 
-                _log('Could not find preparatory method `%s`.' % method)
+                _log(
+                    'Could not find preparatory method `%s`, '
+                    'failed to create variable `%s`.' % (method, var)
+                )
     
+    # build workflow
     workflow = dbdef.get('workflow') or {}
     
     for step in workflow:
@@ -102,10 +112,12 @@ def build(dbclass, dbdef):
         args = dict(
             (
                 argname,
-                locals()[val] if val in locals() else val
+                local_vars[val] if val in local_vars else val
             )
-            for argname, val in step['args']
+            for argname, val in step['args'].items()
         )
+        
+        _log('Calling method `%s`.' % method)
         
         getattr(db, method)(**args)
     
