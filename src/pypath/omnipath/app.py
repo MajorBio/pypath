@@ -53,7 +53,7 @@ class DatabaseManager(session_mod.Logger):
 
     def __init__(self, rebuild = False, **kwargs):
 
-        session_mod.Logger.__init__(self, name = 'omnipath.dbmanager')
+        session_mod.Logger.__init__(self, name = 'omnipath_app')
 
         self.timestamp = time.strftime(settings.get('timestamp_format'))
         self.param = kwargs

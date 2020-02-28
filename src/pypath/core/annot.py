@@ -479,7 +479,11 @@ class CustomAnnotation(session_mod.Logger):
 
         class_types = common.to_set(class_types)
 
-        df = self.df[self.df.class_type.isin(class_types)]
+        df = self.df
+
+        if class_types:
+
+            df = df[self.df.class_type.isin(class_types)]
 
         if entity_types:
 
@@ -1424,14 +1428,26 @@ class CustomAnnotation(session_mod.Logger):
         )
 
 
-    def get_entities(self):
+    def get_entities(self, entity_type = None):
 
-        return set.union(*self.classes.values())
+        entity_type = common.to_set(entity_type)
+
+        entities = set.union(*self.classes.values())
+        
+        return (
+            {
+                en
+                for en in entities
+                if entity.Entity._get_entity_type(en) in entity_type
+            }
+                if entity_type else
+            entities
+        )
 
 
-    def numof_entities(self):
+    def numof_entities(self, entity_type = None):
 
-        return len(self.get_entities())
+        return len(self.get_entities(entity_type = entity_type))
 
 
     def numof_classes(self):

@@ -21,6 +21,13 @@
 #  Website: http://pypath.omnipathdb.org/
 
 
+import pypath.omnipath.aux as omnipath_aux
+import pypath.share.session as session
+
+_logger = session.Logger(name = 'omnipath_db_build')
+_log = _logger._log
+
+
 def build(dbclass, dbdef):
     """
     Builds a database following the instructions in a ``DatabaseDefinition``
@@ -32,6 +39,13 @@ def build(dbclass, dbdef):
     """
     
     dbclass = dbclass if callable(dbclass) else dbclass.get_class()
+    
+    _log(
+        'Building database `%s` (class %s).' % (
+            dbdef.label,
+            dbclass.label,
+        )
+    )
     
     build_method = (
         dbclass
@@ -47,7 +61,38 @@ def build(dbclass, dbdef):
     
     for var, method in prep.items():
         
-        locals()[var] = getattr(db, method)()
+        if isinstance(method, dict):
+            
+            prep_method_args = method['args']
+            method = method['method']
+            
+        else:
+            
+            prep_method_args = {}
+        
+        if callable(method):
+            
+            locals()[var] = method()
+            
+        else:
+            
+            method_host = (
+                db
+                    if hasattr(db, method) else
+                omnipath_aux
+                    if hasattr(omnipath_aux, method) else
+                None
+            )
+            
+            if method_host:
+                
+                locals()[var] = (
+                    getattr(method_host, method)(**prep_method_args)
+                )
+                
+            else:
+                
+                _log('Could not find preparatory method `%s`.' % method)
     
     workflow = dbdef.get('workflow') or {}
     
@@ -63,5 +108,12 @@ def build(dbclass, dbdef):
         )
         
         getattr(db, method)(**args)
+    
+    _log(
+        'Finished building database `%s` (class %s).' % (
+            dbdef.label,
+            dbclass.label,
+        )
+    )
     
     return db
