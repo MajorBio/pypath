@@ -320,7 +320,11 @@ class Evidence(object):
             data_model
         )
 
-        references = common.to_set(references)
+        references = (
+            references
+                if isinstance(references, bool) else
+            common.to_set(references)
+        )
 
         return (
             (
@@ -341,8 +345,15 @@ class Evidence(object):
                 _match('via', via)
             ) and
             (
-                not references or
-                self.references & references
+                (
+                    not len(references) or
+                    self.references & references
+                )
+                if isinstance(references, set) else
+                (
+                    self.references and references or
+                    not self.references and not references
+                )
             ) and
             (
                 not data_model or
